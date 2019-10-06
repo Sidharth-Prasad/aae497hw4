@@ -14,8 +14,7 @@ extern "C" {
 #endif
 
 #include <math.h>
-#include <stdio.h>
-#include <string.h>
+#include <casadi/mem.h>
 
 #ifndef casadi_real
 #define casadi_real double
@@ -51,8 +50,6 @@ static const casadi_int casadi_s0[18] = {14, 1, 0, 14, 0, 1, 2, 3, 4, 5, 6, 7, 8
 static const casadi_int casadi_s1[8] = {4, 1, 0, 4, 0, 1, 2, 3};
 static const casadi_int casadi_s2[19] = {15, 1, 0, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
 static const casadi_int casadi_s3[7] = {3, 1, 0, 3, 0, 1, 2};
-
-#define CASADI_PRINTF printf
 
 /* rocket_prop_moment:(x[14],u[4],p[15])->(MP_b[3]) */
 static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, void* mem) {
@@ -118,32 +115,22 @@ CASADI_SYMBOL_EXPORT int rocket_prop_moment_work(casadi_int *sz_arg, casadi_int*
   return 0;
 }
 
-casadi_int main_rocket_prop_moment(casadi_int argc, char* argv[]) {
-  casadi_int *iw = 0;
-  casadi_real w[37];
-  const casadi_real* arg[3] = {w+0, w+14, w+18};
-  casadi_real* res[1] = {w+33};
-  casadi_int j;
-  casadi_real* a = w;
-  for (j=0; j<33; ++j) scanf("%lf", a++);
-  casadi_int flag = rocket_prop_moment(arg, res, iw, w+36, 0);
-  if (flag) return flag;
-  const casadi_real* r = w+33;
-  for (j=0; j<3; ++j) CASADI_PRINTF("%g ", *r++);
-  CASADI_PRINTF("\n");
-  return 0;
+CASADI_SYMBOL_EXPORT casadi_functions* rocket_prop_moment_functions(void) {
+  static casadi_functions fun = {
+    rocket_prop_moment_incref,
+    rocket_prop_moment_decref,
+    rocket_prop_moment_n_in,
+    rocket_prop_moment_n_out,
+    rocket_prop_moment_name_in,
+    rocket_prop_moment_name_out,
+    rocket_prop_moment_sparsity_in,
+    rocket_prop_moment_sparsity_out,
+    rocket_prop_moment_work,
+    rocket_prop_moment
+  };
+  return &fun;
 }
 
-
-int main(int argc, char* argv[]) {
-  if (argc<2) {
-    /* name error */
-  } else if (strcmp(argv[1], "rocket_prop_moment")==0) {
-    return main_rocket_prop_moment(argc-2, argv+2);
-  }
-  fprintf(stderr, "First input should be a command string. Possible values: 'rocket_prop_moment'\n");
-  return 1;
-}
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

@@ -12,6 +12,7 @@ extern "C" {
 #define casadi_int long long int
 #endif
 
+#include <casadi/mem.h>
 int rocket_aero_moment(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, void* mem);
 void rocket_aero_moment_incref(void);
 void rocket_aero_moment_decref(void);
@@ -22,6 +23,7 @@ const char* rocket_aero_moment_name_out(casadi_int i);
 const casadi_int* rocket_aero_moment_sparsity_in(casadi_int i);
 const casadi_int* rocket_aero_moment_sparsity_out(casadi_int i);
 int rocket_aero_moment_work(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
+casadi_functions* rocket_aero_moment_functions(void);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

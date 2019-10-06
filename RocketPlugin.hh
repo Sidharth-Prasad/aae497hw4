@@ -32,10 +32,10 @@
 #include "rocket.pb.h"
 #include "casadi/CasadiFunc.hpp"
 #include "casadi_gen.h"
-#include <rocket_aero_forces.h>
-#include <rocket_aero_moment.h>
-#include <rocket_prop_forces.h>
-#include <rocket_prop_moment.h>
+#include "rocket_aero_forces.h"
+#include "rocket_aero_moment.h"
+#include "rocket_prop_forces.h"
+#include "rocket_prop_moment.h"
 
 namespace gazebo
 {
@@ -117,6 +117,8 @@ namespace gazebo
     /// \brief Motor Link
     private: physics::LinkPtr motor;
 
+    private: physics::LinkPtr body;
+
     /// \brief keep track of controller update sim-time.
     private: gazebo::common::Time lastUpdateTime;
 
@@ -134,13 +136,10 @@ namespace gazebo
 
 	/// \brief Our casadi function
     private: CasadiFunc _double_this;
-
     private: CasadiFunc _rocket_aero_forces;
-
     private: CasadiFunc _rocket_aero_moment;
-
     private: CasadiFunc _rocket_prop_forces;
-
+    private: CasadiFunc _rocket_prop_moment;
   };
 }
 #endif

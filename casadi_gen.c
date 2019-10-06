@@ -10,7 +10,7 @@ extern "C" {
   #define _NAMESPACE_CONCAT(NS, ID) NS ## ID
   #define CASADI_PREFIX(ID) NAMESPACE_CONCAT(CODEGEN_PREFIX, ID)
 #else
-  #define CASADI_PREFIX(ID) rocket_prop_forces_ ## ID
+  #define CASADI_PREFIX(ID) casadi_gen_ ## ID
 #endif
 
 #include <math.h>
@@ -51,37 +51,39 @@ static const casadi_int casadi_s1[8] = {4, 1, 0, 4, 0, 1, 2, 3};
 static const casadi_int casadi_s2[19] = {15, 1, 0, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
 static const casadi_int casadi_s3[7] = {3, 1, 0, 3, 0, 1, 2};
 
-/* rocket_prop_forces:(x[14],u[4],p[15])->(FP_b[3]) */
+/* double_this:(x[14],u[4],p[15])->(F_aero[3],F_prop[3]) */
 static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, void* mem) {
-  casadi_real a0, a1, a2, a3;
-  a0=0.;
-  a1=arg[0] ? arg[0][13] : 0;
-  a1=(a0<a1);
-  a2=arg[1] ? arg[1][0] : 0;
-  a3=arg[2] ? arg[2][5] : 0;
-  a2=(a2*a3);
-  a1=(a1?a2:0);
-  if (res[0]!=0) res[0][0]=a1;
+  casadi_real a0;
+  a0=arg[2] ? arg[2][0] : 0;
+  if (res[0]!=0) res[0][0]=a0;
+  a0=arg[2] ? arg[2][1] : 0;
   if (res[0]!=0) res[0][1]=a0;
+  a0=arg[2] ? arg[2][2] : 0;
   if (res[0]!=0) res[0][2]=a0;
+  a0=arg[0] ? arg[0][3] : 0;
+  if (res[1]!=0) res[1][0]=a0;
+  a0=arg[0] ? arg[0][4] : 0;
+  if (res[1]!=0) res[1][1]=a0;
+  a0=arg[0] ? arg[0][5] : 0;
+  if (res[1]!=0) res[1][2]=a0;
   return 0;
 }
 
-CASADI_SYMBOL_EXPORT int rocket_prop_forces(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, void* mem){
+CASADI_SYMBOL_EXPORT int double_this(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, void* mem){
   return casadi_f0(arg, res, iw, w, mem);
 }
 
-CASADI_SYMBOL_EXPORT void rocket_prop_forces_incref(void) {
+CASADI_SYMBOL_EXPORT void double_this_incref(void) {
 }
 
-CASADI_SYMBOL_EXPORT void rocket_prop_forces_decref(void) {
+CASADI_SYMBOL_EXPORT void double_this_decref(void) {
 }
 
-CASADI_SYMBOL_EXPORT casadi_int rocket_prop_forces_n_in(void) { return 3;}
+CASADI_SYMBOL_EXPORT casadi_int double_this_n_in(void) { return 3;}
 
-CASADI_SYMBOL_EXPORT casadi_int rocket_prop_forces_n_out(void) { return 1;}
+CASADI_SYMBOL_EXPORT casadi_int double_this_n_out(void) { return 2;}
 
-CASADI_SYMBOL_EXPORT const char* rocket_prop_forces_name_in(casadi_int i){
+CASADI_SYMBOL_EXPORT const char* double_this_name_in(casadi_int i){
   switch (i) {
     case 0: return "x";
     case 1: return "u";
@@ -90,14 +92,15 @@ CASADI_SYMBOL_EXPORT const char* rocket_prop_forces_name_in(casadi_int i){
   }
 }
 
-CASADI_SYMBOL_EXPORT const char* rocket_prop_forces_name_out(casadi_int i){
+CASADI_SYMBOL_EXPORT const char* double_this_name_out(casadi_int i){
   switch (i) {
-    case 0: return "FP_b";
+    case 0: return "F_aero";
+    case 1: return "F_prop";
     default: return 0;
   }
 }
 
-CASADI_SYMBOL_EXPORT const casadi_int* rocket_prop_forces_sparsity_in(casadi_int i) {
+CASADI_SYMBOL_EXPORT const casadi_int* double_this_sparsity_in(casadi_int i) {
   switch (i) {
     case 0: return casadi_s0;
     case 1: return casadi_s1;
@@ -106,33 +109,34 @@ CASADI_SYMBOL_EXPORT const casadi_int* rocket_prop_forces_sparsity_in(casadi_int
   }
 }
 
-CASADI_SYMBOL_EXPORT const casadi_int* rocket_prop_forces_sparsity_out(casadi_int i) {
+CASADI_SYMBOL_EXPORT const casadi_int* double_this_sparsity_out(casadi_int i) {
   switch (i) {
     case 0: return casadi_s3;
+    case 1: return casadi_s3;
     default: return 0;
   }
 }
 
-CASADI_SYMBOL_EXPORT int rocket_prop_forces_work(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w) {
+CASADI_SYMBOL_EXPORT int double_this_work(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w) {
   if (sz_arg) *sz_arg = 3;
-  if (sz_res) *sz_res = 1;
+  if (sz_res) *sz_res = 2;
   if (sz_iw) *sz_iw = 0;
   if (sz_w) *sz_w = 0;
   return 0;
 }
 
-CASADI_SYMBOL_EXPORT casadi_functions* rocket_prop_forces_functions(void) {
+CASADI_SYMBOL_EXPORT casadi_functions* double_this_functions(void) {
   static casadi_functions fun = {
-    rocket_prop_forces_incref,
-    rocket_prop_forces_decref,
-    rocket_prop_forces_n_in,
-    rocket_prop_forces_n_out,
-    rocket_prop_forces_name_in,
-    rocket_prop_forces_name_out,
-    rocket_prop_forces_sparsity_in,
-    rocket_prop_forces_sparsity_out,
-    rocket_prop_forces_work,
-    rocket_prop_forces
+    double_this_incref,
+    double_this_decref,
+    double_this_n_in,
+    double_this_n_out,
+    double_this_name_in,
+    double_this_name_out,
+    double_this_sparsity_in,
+    double_this_sparsity_out,
+    double_this_work,
+    double_this
   };
   return &fun;
 }
