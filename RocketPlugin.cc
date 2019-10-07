@@ -132,7 +132,7 @@ void RocketPlugin::Update(const common::UpdateInfo &/*_info*/)
     auto motor_inertial = this->motor->GetInertial();
     float m_fuel = motor_inertial->Mass();
     auto body_inertial = this->body->GetInertial();
-    float m = body_inertial->Mass();
+    float m = motor_inertial->Mass();
     float m_dot = .1;
     float m_empty = 0.2;
     m = m - m_dot*dt;
@@ -141,12 +141,16 @@ void RocketPlugin::Update(const common::UpdateInfo &/*_info*/)
     if (m < m_empty) {
       m = m_empty;
       m_dot = 0;
-	  Pe = P0;
+	    Pe = P0;
     }
 	
     float r = 0.1; // nozzle radius
 	  float A = M_PI*r*r; // nozzle exit area
     float ve = 320; // exit velocity, m/s, guess
+    this->motor->AddRelativeForce(ignition::math::Vector3d(0, 0, m_dot*ve + A*(Pe - P0)));
+    motor_inertial->SetMass(m);
+    motor_inertial->SetInertiaMatrix(0.01, 0.01, 0.01, 0, 0, 0); // treat as point mass
+    this->lastUpdateTime = curTime;
 
     float g = 9.81;
     float Jx = 1.0;
@@ -154,16 +158,15 @@ void RocketPlugin::Update(const common::UpdateInfo &/*_info*/)
     float Jz = 1.0;
     float Jxz = 0.1;
     float l_fin = 1.0;
-    float cl_alpha = 2*3.14159265;
+    float cl_alpha = 0.1;
     float cl0 = 0;
     float cd0 = 0.01;
-    float K = 0.01;
+    float K = 0.0001;
     float S_fin = 0.05;
     float rho = 1.225;
     float l_motor = 1.0;
 
-    double p[15] = { g, Jx, Jy, Jz, Jxz, ve, l_fin, cl_alpha, cl0, cd0, K, S_fin, rho, m_empty, l_motor};
-
+    double p[15] = {g, Jx, Jy, Jz, Jxz, ve, l_fin, cl_alpha, cl0, cd0, K, S_fin, rho, m_empty, l_motor};
 
     double FA_b[3] = {0,0,0};
     double MA_b[3] = {0,0,0};
@@ -188,9 +191,9 @@ void RocketPlugin::Update(const common::UpdateInfo &/*_info*/)
     // z->-D, 
 
 
-    double pos_n[3]   = {pos_ine.X()  ,pos_ine.Y()  ,pos_ine.Z()  };
-    double q_ENU_TRF[4]       = {rot_ine.W()  ,rot_ine.X()  ,rot_ine.Y()  ,rot_ine.Z()};
-    double vel_ENU[3]   = {vel_ine.X()  ,vel_ine.Y()  ,vel_ine.Z()  };
+    double pos_n[3] = {pos_ine.X(),pos_ine.Y(),pos_ine.Z()};
+    double q_ENU_TRF[4] = {rot_ine.W(),rot_ine.X(),rot_ine.Y(),rot_ine.Z()};
+    double vel_ENU[3] = {vel_ine.X(),vel_ine.Y(),vel_ine.Z()};
     double omg_ENU[3] = {omega_ine.X(),omega_ine.Y(),omega_ine.Z()};
 
     //Convert velocities wrt inertial frame to velocities wrt body frame
@@ -199,41 +202,37 @@ void RocketPlugin::Update(const common::UpdateInfo &/*_info*/)
     //Fill x array with states (wrt body frame)
     //{omg_b, r_nb, v_b, pos_n, m_fuel}
     double x_ENU[14]= {0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    std::copy(omg_ENU, omg_ENU+3, x_ENU   );
-    std::copy(q_ENU_TRF , q_ENU_TRF+4, x_ENU+3 );
-    std::copy(vel_ENU  , vel_ENU  +3, x_ENU+7 );
+    std::copy(omg_ENU, omg_ENU+3, x_ENU);
+    std::copy(q_ENU_TRF, q_ENU_TRF+4, x_ENU+3);
+    std::copy(vel_ENU, vel_ENU+3, x_ENU+7);
     std::copy(pos_n, pos_n+3, x_ENU+10);
-    x_ENU[13] = m_fuel;
-
-
-
-    _rocket_aero_forces.arg(2,p); //Set rocket constant parameters for each eom
-    _rocket_aero_moment.arg(2,p); //Set rocket constant parameters for each eom
-    _rocket_prop_forces.arg(2,p); //Set rocket constant parameters for each eom
-    _rocket_prop_moment.arg(2,p); //Set rocket constant parameters for each eom
+    x_ENU[13] = m-0.2;
 
     _rocket_aero_forces.arg(0,x_ENU); //Set address of rocket state for each eom
     _rocket_aero_moment.arg(0,x_ENU); //Set address of rocket state for each eom
     _rocket_prop_forces.arg(0,x_ENU); //Set address of rocket state for each eom
     _rocket_prop_moment.arg(0,x_ENU); //Set address of rocket state for each eom
 
-
-    double u[4]   = {0.1,0,0,0};     //Set input to zero for now
+    double u[4] = {m_dot,0,0,0};     //Set input to zero for now
     _rocket_aero_forces.arg(1,u); 
     _rocket_aero_moment.arg(1,u); 
     _rocket_prop_forces.arg(1,u); 
     _rocket_prop_moment.arg(1,u);
 
+    _rocket_aero_forces.arg(2,p); //Set rocket constant parameters for each eom
+    _rocket_aero_moment.arg(2,p); //Set rocket constant parameters for each eom
+    _rocket_prop_forces.arg(2,p); //Set rocket constant parameters for each eom
+    _rocket_prop_moment.arg(2,p); //Set rocket constant parameters for each eom
+    
     _rocket_aero_forces.res(0,FA_b); //Set rocket aero forces
     _rocket_aero_moment.res(0,MA_b); //Set rocket aero moments
     _rocket_prop_forces.res(0,FP_b); //Set rocket propulsion forces
     _rocket_prop_moment.res(0,MP_b); //Set rocket propulsion moments
-
+ 
     _rocket_aero_forces.eval(); //Calculate new value of FA_b
     _rocket_aero_moment.eval(); //Calculate new value of MA_b
     _rocket_prop_forces.eval(); //Calculate new value of FP_b
     _rocket_prop_moment.eval(); //Calculate new value of MP_b
- 
 
     // FA_b[0] = 0;
     // FA_b[1] = 0;
@@ -253,6 +252,7 @@ void RocketPlugin::Update(const common::UpdateInfo &/*_info*/)
     gzdbg << "FA_b[0]=" << FA_b[0] << " FA_b[1]=" << FA_b[1] << " FA_b[2]=" << FA_b[2] << "\n" << std::endl;
     this->motor->AddRelativeTorque(ignition::math::Vector3d(MP_b[0], MP_b[1], MP_b[2]));
     this->body ->AddRelativeTorque(ignition::math::Vector3d(MA_b[0], MA_b[1], MA_b[2]));
+    gzdbg << "MA_b[0]=" << MA_b[0] << " MA_b[1]=" << MA_b[1] << " MA_b[2]=" << MA_b[2] << "\n" << std::endl;
 
 	  // std::cout << "input" << u << "result" <<  << std::endl;
     std::cout << "velocity" << vel_ENU << std::endl;
